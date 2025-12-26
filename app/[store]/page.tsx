@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Tag, Truck, Star, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Tag, Truck, Star, ArrowRight, Image as ImageIcon } from 'lucide-react';
 import { Button, Card, Badge } from '@/components/ui';
 import { STORE_SLUG, VALUE_PROPOSITIONS, PRODUCT_CATEGORIES } from '@/lib/utils/constants';
 import { formatPrice } from '@/lib/utils';
@@ -83,35 +83,72 @@ const mockReviews = [
   },
 ];
 
-export default function HomePage() {
+import { getStoreConfig, getBanners, getProducts } from '@/lib/api';
+
+export default function HomePage({ params }: { params: { store: string } }) {
+  const [banners, setBanners] = React.useState<any[]>([]);
+  const [products, setProducts] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function loadData() {
+      try {
+        const store = await getStoreConfig(params.store);
+        const [bannersData, productsData] = await Promise.all([
+          getBanners(store.id, 'homepage_hero'),
+          getProducts(store.id, undefined, true, 1, 4)
+        ]);
+        setBanners(bannersData);
+        setProducts(productsData.products);
+      } catch (err) {
+        console.error('Failed to load homepage data', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [params.store]);
+
+  const activeBanner = banners[0];
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[90vh] md:h-[90vh] bg-gradient-to-br from-gray-100 to-secondary flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-black/10"></div>
+      <section
+        className="relative h-[90vh] md:h-[90vh] flex items-center justify-center overflow-hidden bg-cover bg-center"
+        style={{
+          backgroundImage: activeBanner ? `url(${activeBanner.imageUrl})` : 'none',
+          backgroundColor: !activeBanner ? 'var(--secondary)' : 'transparent'
+        }}
+      >
+        <div className={`absolute inset-0 ${activeBanner ? 'bg-black/40' : 'bg-gradient-to-br from-gray-100 to-secondary'}`}></div>
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           className="relative z-10 text-center px-4 max-w-4xl mx-auto"
         >
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-heading font-bold text-primary mb-6">
-            Luxury You Can Feel.
-            <br />
-            <span className="text-accent">Style You Deserve.</span>
+          <h1 className={`text-4xl md:text-6xl lg:text-7xl font-heading font-bold mb-6 ${activeBanner ? 'text-white' : 'text-primary'}`}>
+            {activeBanner?.title || (
+              <>
+                Luxury You Can Feel.
+                <br />
+                <span className="text-accent">Style You Deserve.</span>
+              </>
+            )}
           </h1>
-          <p className="text-lg md:text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
-            Experience the essence of luxury with our mirror-quality replica bags. Affordable elegance, uncompromising style.
+          <p className={`text-lg md:text-xl mb-8 max-w-2xl mx-auto ${activeBanner ? 'text-white/90' : 'text-gray-700'}`}>
+            {activeBanner?.description || "Experience the essence of luxury with our mirror-quality replica bags. Affordable elegance, uncompromising style."}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button variant="primary" size="lg" className="group">
-              <Link href={`/${STORE_SLUG}/products`} className="flex items-center">
+              <Link href={`/${params.store}/products`} className="flex items-center">
                 Shop Bags
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
-            <Button variant="outline" size="lg">
-              <Link href={`/${STORE_SLUG}/categories`}>Explore Collections</Link>
+            <Button variant="outline" size="lg" className={activeBanner ? 'bg-white/10 text-white border-white/30 hover:bg-white/20' : ''}>
+              <Link href={`/${params.store}/categories`}>Explore Collections</Link>
             </Button>
           </div>
         </motion.div>
@@ -181,57 +218,55 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {mockBestSellers.map((product, index) => (
-              <motion.div
-                key={product.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Link href={`/${STORE_SLUG}/product/${product.slug}`}>
-                  <Card hover className="group">
-                    <div className="relative aspect-[4/5] bg-gray-100 overflow-hidden rounded-t-2xl">
-                      <div className="absolute top-4 left-4 z-10">
-                        <Badge variant="bestSeller">Best Seller</Badge>
-                      </div>
-                      <div className="absolute top-4 right-4 z-10">
-                        <Badge variant="quality">Mirror Quality</Badge>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <p className="text-sm text-gray-500 mb-1">{product.brand}</p>
-                      <h3 className="font-semibold text-lg text-gray-900 mb-2 group-hover:text-accent transition-colors line-clamp-2">
-                        {product.name}
-                      </h3>
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`w-4 h-4 ${
-                                i < Math.round(product.averageRating)
-                                  ? 'fill-accent text-accent'
-                                  : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
+            {loading ? (
+              [...Array(4)].map((_, i) => (
+                <div key={i} className="h-80 bg-gray-200 animate-pulse rounded-2xl"></div>
+              ))
+            ) : products.length === 0 ? (
+              <p className="col-span-full text-center text-gray-500 py-10">No best sellers featured yet.</p>
+            ) : (
+              products.map((product, index) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Link href={`/${params.store}/product/${product.slug}`}>
+                    <Card hover className="group">
+                      <div className="relative aspect-[4/5] bg-gray-100 overflow-hidden rounded-t-2xl">
+                        {product.images?.[0] ? (
+                          <img
+                            src={typeof product.images[0] === 'string' ? product.images[0] : (product.images[0] as any).url}
+                            alt={product.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="w-12 h-12 text-gray-300" />
+                          </div>
+                        )}
+                        <div className="absolute top-4 left-4 z-10">
+                          <Badge variant="bestSeller">Best Seller</Badge>
                         </div>
-                        <span className="text-sm text-gray-500">({product.reviewCount})</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl font-bold text-accent">
-                          {formatPrice(product.salePrice)}
-                        </span>
-                        <span className="text-sm text-gray-500 line-through">
-                          {formatPrice(product.basePrice)}
-                        </span>
+                      <div className="p-4">
+                        <p className="text-sm text-gray-500 mb-1">{product.brand || 'Luxury Bag'}</p>
+                        <h3 className="font-semibold text-lg text-gray-900 mb-2 group-hover:text-accent transition-colors line-clamp-2">
+                          {product.name}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl font-bold text-accent">
+                            {formatPrice(Number(product.basePrice))}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </Card>
-                </Link>
-              </motion.div>
-            ))}
+                    </Card>
+                  </Link>
+                </motion.div>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -305,9 +340,8 @@ export default function HomePage() {
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className={`w-5 h-5 ${
-                            i < review.rating ? 'fill-accent text-accent' : 'text-gray-300'
-                          }`}
+                          className={`w-5 h-5 ${i < review.rating ? 'fill-accent text-accent' : 'text-gray-300'
+                            }`}
                         />
                       ))}
                     </div>

@@ -42,6 +42,15 @@ export const getProductBySlug = async (storeId: string, slug: string): Promise<P
     return response.data;
 };
 
+// Banners
+export const getBanners = async (storeId: string, position?: string): Promise<any[]> => {
+    const params: Record<string, any> = { storeId };
+    if (position) params.position = position;
+
+    const response = await api.get('/banners', { params });
+    return response.data;
+};
+
 // Categories
 export const getCategories = async (storeId: string): Promise<Category[]> => {
     const response = await api.get('/categories', { params: { storeId } });

@@ -1,5 +1,6 @@
 // Store Configuration
 export interface StoreConfig {
+  id: string;
   slug: string;
   name: string;
   description: string;
