@@ -5,12 +5,14 @@ import Link from 'next/link';
 import { Menu, X, Search, ShoppingCart, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NAV_LINKS, SITE_NAME, STORE_SLUG } from '@/lib/utils/constants';
-import { useCartStore } from '@/lib/store/cart';
+import { useCart } from '@/lib/context/CartContext';
+import { MiniCart } from './MiniCart';
 
 export const Header: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const cartItemCount = useCartStore((state) => state.getItemCount());
+  const [isMiniCartOpen, setIsMiniCartOpen] = useState(false);
+  const { cartCount } = useCart();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -113,18 +115,18 @@ export const Header: React.FC = () => {
             </button>
 
             {/* Cart */}
-            <Link
-              href={`/${STORE_SLUG}/cart`}
+            <button
+              onClick={() => setIsMiniCartOpen(true)}
               className="relative p-2 text-gray-700 hover:text-accent transition-colors"
               aria-label="Shopping Cart"
             >
               <ShoppingCart className="w-5 h-5" />
-              {cartItemCount > 0 && (
+              {cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-accent text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-bounce">
-                  {cartItemCount}
+                  {cartCount}
                 </span>
               )}
-            </Link>
+            </button>
 
             {/* Mobile Menu Toggle */}
             <button
@@ -136,6 +138,13 @@ export const Header: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Mini Cart Sidebar */}
+        <MiniCart
+          isOpen={isMiniCartOpen}
+          onClose={() => setIsMiniCartOpen(false)}
+          storeSlug={STORE_SLUG}
+        />
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (

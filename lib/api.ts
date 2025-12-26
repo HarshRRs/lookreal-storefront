@@ -57,4 +57,9 @@ export const getCategories = async (storeId: string): Promise<Category[]> => {
     return response.data;
 };
 
+export const getCategoryBySlug = async (storeId: string, slug: string): Promise<Category> => {
+    const response = await api.get(`/categories/${slug}`, { params: { storeId } });
+    return response.data;
+};
+
 export default api;

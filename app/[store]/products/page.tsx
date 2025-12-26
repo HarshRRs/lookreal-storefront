@@ -1,14 +1,12 @@
-export default function ProductsPage() {
-  return (
-    <div className="max-w-7xl mx-auto px-4 py-12">
-      <h1 className="text-4xl font-heading font-bold text-primary mb-8">
-        All Products
-      </h1>
-      <div className="text-center py-20">
-        <p className="text-gray-600 text-lg">
-          Products page coming soon. This will display all available luxury replica bags.
-        </p>
-      </div>
-    </div>
-  );
+import React from 'react';
+import type { Metadata } from 'next';
+import ProductsClient from './ProductsClient';
+
+export const metadata: Metadata = {
+  title: 'Collection Catalog | LOOKREAL - Premium Luxury Bags',
+  description: 'Browse our complete catalog of mirror-quality luxury replica bags. Filter by brand, category, or quality to find your perfect piece.',
+};
+
+export default function ProductsPage({ params }: { params: { store: string } }) {
+  return <ProductsClient params={params} />;
 }

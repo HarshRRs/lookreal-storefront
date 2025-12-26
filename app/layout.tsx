@@ -3,6 +3,8 @@ import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { Header, Footer } from "@/components/layout";
 import { SITE_NAME, DEFAULT_SEO } from "@/lib/utils/constants";
+import { CartProvider } from "@/lib/context/CartContext";
+import { Toaster } from "react-hot-toast";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -36,9 +38,23 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body className={`${inter.variable} ${outfit.variable} antialiased`}>
-        <Header />
-        <main className="min-h-screen pt-20">{children}</main>
-        <Footer />
+        <CartProvider>
+          <Toaster
+            position="bottom-center"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: '#0B0B0B',
+                color: '#fff',
+                borderRadius: '1rem',
+                padding: '1rem 1.5rem',
+              },
+            }}
+          />
+          <Header />
+          <main className="min-h-screen pt-20">{children}</main>
+          <Footer />
+        </CartProvider>
       </body>
     </html>
   );
